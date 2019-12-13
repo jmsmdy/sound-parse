@@ -1,5 +1,5 @@
 # instrument-classifier
-Uses machine learning to classify isolated samples by musical instrument.
+Uses machine learning to classify audio samples by musical instrument.
 
 ### Data Sources
 
@@ -9,9 +9,26 @@ Uses machine learning to classify isolated samples by musical instrument.
 
 ### Data Technologies Used
 
-Python for Data Wrangling
- - BeautifulSoup for Web Scraping
+Python
 
-AWS S3 for Audio Samples
-AWS RDS for Audio Metadata
+  - BeautifulSoup for web scraping
+  - pandas for data wrangling
+  - librosa for audio processing
+  - matplotlib for visualization
 
+AWS
+
+ - S3 for raw audio samples
+ - RDS (MySQL) for signal-processed data
+
+### Under the Hood
+
+Onset detection is used to isolate the time of the attack. The spectral content in four audio frames near the attack is measured across 28 dimensions, giving a 112 dimensional representation of each sample.
+
+This resulting representation is then classified using XGBoost with 500 estimators.
+
+The classifier is trained on 24 distinct instrument types representing common orchestral music.
+
+### Results
+
+We obtain an 83% accuracy rate on test data, which is a 4.5 times improvement over the baseline model.
