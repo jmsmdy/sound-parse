@@ -103,6 +103,7 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+.DS_Store
 config.py
 Soundfont\ Creation
 preprocessed_samples
