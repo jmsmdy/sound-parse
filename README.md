@@ -39,6 +39,6 @@ Training was completed over the course of a few days on Google Cloud Platform. T
 
 After training, the network was able to accurately reconstruct both note and intensity information on test data.
 
-![results](results.png)
+![results](results.jpg)
 
 Caveat: this should be taken with a grain of salt, since test data was constructed using the same samples and with the same quantization as training data.
