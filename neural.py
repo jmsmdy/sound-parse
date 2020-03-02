@@ -7,6 +7,8 @@ scaling=0.01
 class STFTLayer(tf.Module):
     def __init__(self, input_features, frame_length, frame_step, name=None):
         super(STFTLayer, self).__init__(name=name)
+        self.scaling = tf.constant(1.0, dtype=tf.float32)
+        self.scalings = []
         self.input_features = input_features
         self.frame_length = frame_length
         self.frame_step = frame_step
@@ -44,6 +46,8 @@ class STFTLayer(tf.Module):
 class RFFTLayer(tf.Module):
     def __init__(self, input_features, name=None):
         super(RFFTLayer, self).__init__(name=name)
+        self.scaling = tf.constant(1.0, dtype=tf.float32)
+        self.scalings = []
         self.input_features = input_features
         i = 0
         while (2 ** i) < self.input_features:
@@ -77,6 +81,7 @@ class ReluLayer(tf.Module):
             self.scaling = tf.constant(scaling, dtype=tf.float32)
         else:
             self.scaling = tf.constant(1.0 / self.input_features, dtype=tf.float32)
+        self.scalings = [self.scaling, tf.constant(1.0, dtype=tf.float32)]
         self.w = tf.Variable(tf.random.normal([self.input_features, self.output_features],
                                               dtype=tf.float32,
                                               mean=0.0,
@@ -118,6 +123,7 @@ class SeluLayer(tf.Module):
             self.scaling = tf.constant(scaling, dtype=tf.float32)
         else:
             self.scaling = tf.constant(1.0 / self.input_features, dtype=tf.float32)
+        self.scalings = [self.scaling, tf.constant(1.0, dtype=tf.float32)]
         self.w = tf.Variable(tf.random.normal([self.input_features, self.output_features],
                                               dtype=tf.float32,
                                               mean=0.0,
@@ -151,13 +157,14 @@ class SeluLayer(tf.Module):
 
 class SigmoidLayer(tf.Module):
     def __init__(self, input_features, output_features, scaling=None, name=None):
+        super(SigmoidLayer, self).__init__(name=name)
         self.input_features = input_features
         self.output_features = output_features
         if scaling:
             self.scaling = tf.constant(scaling, dtype=tf.float32)
         else:
             self.scaling = tf.constant(1.0 / self.input_features, dtype=tf.float32)
-        super(SigmoidLayer, self).__init__(name=name)
+        self.scalings = [self.scaling, tf.constant(1.0, dtype=tf.float32)]
         self.w = tf.Variable(tf.random.normal([self.input_features, self.output_features],
                                               dtype=tf.float32,
                                               mean=0.0,
@@ -193,6 +200,8 @@ class SigmoidLayer(tf.Module):
 class DisperseLayer(tf.Module):
     def __init__(self, input_features, chunk_size, shift_percentage, name=None):
         super(DisperseLayer, self).__init__(name=name)
+        self.scaling = tf.constant(1.0, dtype=tf.float32)
+        self.scalings = []
         self.input_features = input_features
         inverse_shift_ratio = int(round(1 / shift_percentage))
         self.num_chunks = (inverse_shift_ratio*(input_features - chunk_size) // chunk_size) + 1
@@ -223,6 +232,8 @@ class DisperseLayer(tf.Module):
 class JoinLayer(tf.Module):
     def __init__(self, chunk_size, num_chunks, name=None):
         super(JoinLayer, self).__init__(name=name)
+        self.scaling = tf.constant(1.0, dtype=tf.float32)
+        self.scalings = []
         self.chunk_size = chunk_size
         self.num_chunks = num_chunks
         self.output_features = chunk_size * num_chunks
@@ -248,6 +259,8 @@ class SparseLayer(tf.Module):
     def __init__(self, input_features, input_chunk_size, input_chunk_step,
                  output_features, output_chunk_size, output_chunk_step, name=None):
         super(SparseLayer, self).__init__(name=name)
+        self.scaling = tf.constant(1.0, dtype=tf.float32)
+        self.scalings = []
         if (input_features - input_chunk_size) % input_chunk_step != 0:
             raise ValueError('input_features must be of the form input_chunk_size + k*input_chunk_step for some k')
         if (output_features - output_chunk_size) % output_chunk_step != 0:
@@ -265,7 +278,7 @@ class SparseLayer(tf.Module):
         self.output_features = output_features
         self.output_chunk_size = output_chunk_size
         self.output_chunk_step = output_chunk_step
-        self.w = tf.Variable(tf.random.normal([num_chunks, input_chunk_size, output_chunk_size], dtype=tf.float32, stddev=scaling), name='w')
+        self.w = tf.Variable(tf.random.normal([num_chunks, input_chunk_size, output_chunk_size], dtype=tf.float32, stddev=self.scaling), name='w')
         self.b = tf.Variable(tf.zeros([num_chunks, output_chunk_size], dtype=tf.float32), name='b')
         print(f'Sparse Layer. Input Features: {input_features} Output Features: {self.output_features}')
         print(f'Input Chunk Size: {input_chunk_size} Input Chunk Step: {input_chunk_step}')
