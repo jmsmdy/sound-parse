@@ -22,17 +22,19 @@ class Song(tf.Module):
             padded_samples.append(padded_sample)
         self.padded_samples = tf.constant(padded_samples, dtype=tf.float32)
         self.output = tf.Variable(tf.zeros([N,], dtype=tf.float32))
-        self.notes = tf.Variable(tf.zeros([3 * self.length_in_beats // 4, self.num_inst_samples], dtype=tf.int32))
+        self.notes = tf.Variable(tf.zeros([self.length_in_beats, self.num_inst_samples], dtype=tf.int32))
         self.notes_float = tf.Variable(tf.zeros([self.length_in_beats, self.num_inst_samples,], dtype=tf.float32))
         self.zero()
 
+    @tf.function
     def zero(self):
-        self.notes = self.notes.assign(tf.zeros([3 * self.length_in_beats // 4, self.num_inst_samples], dtype=tf.int32))
+        self.notes = self.notes.assign(tf.zeros([self.length_in_beats, self.num_inst_samples], dtype=tf.int32))
+        self.notes_float = self.notes_float.assign(tf.zeros([self.length_in_beats, self.num_inst_samples,], dtype=tf.float32))
         samples_per_beat = (self.sr * 60) // self.bpm
         N = samples_per_beat * self.length_in_beats
         self.output.assign(tf.zeros([N,], dtype=tf.float32))
     
-    @tf.function
+    #@tf.function
     def create(self):
         length = 3 * self.length_in_beats // 4
         N = self.sr * self.length_in_beats * 60 // self.bpm
@@ -58,9 +60,6 @@ class Song(tf.Module):
                 j = np.random.choice(lst)
                 intensity = 127 #np.random.randint(1,127)
                 self.add(i, j, intensity)
-    
-    def compile(self):
-        self.notes_float.assign(tf.reshape(tf.cast(self.notes, dtype=tf.float32) / 128.0, [self.length_in_beats * self.num_inst_samples,]))
         
     @tf.function                
     def __call__(self, notes_float, padded_samples):
@@ -76,9 +75,11 @@ class Song(tf.Module):
         samples_per_beat = (self.sr * 60) // self.bpm
         old_intensity = self.notes[i,j]
         new_intensity = tf.cast(intensity, dtype=tf.int32)
+        float_intensity = tf.cast(intensity, dtype=tf.float32) / 128.0
         float_intensity_difference = tf.cast((new_intensity - old_intensity), dtype=tf.float32) / 128.0
         self.output.assign_add(float_intensity_difference * tf.roll(self.padded_samples[j], shift=i*samples_per_beat, axis=0))
-        self.notes[i,j].assign(intensity)
+        self.notes_float[i,j].assign(float_intensity)
+        self.notes[i,j].assign(new_intensity)
         
     def transform(self, matrix):
         for i in range(self.notes.shape[0]):
