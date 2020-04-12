@@ -71,15 +71,16 @@ class Song(tf.Module):
                 self.output.assign_add(notes_float[i,j] * tf.roll(padded_samples[j], shift=i*samples_per_beat, axis=0))
         return None
     
+    #@tf.function
     def add(self, i, j, intensity):
         samples_per_beat = (self.sr * 60) // self.bpm
         old_intensity = self.notes[i,j]
         new_intensity = tf.cast(intensity, dtype=tf.int32)
         float_intensity = tf.cast(intensity, dtype=tf.float32) / 128.0
         float_intensity_difference = tf.cast((new_intensity - old_intensity), dtype=tf.float32) / 128.0
-        self.output.assign_add(float_intensity_difference * tf.roll(self.padded_samples[j], shift=i*samples_per_beat, axis=0))
-        self.notes_float[i,j].assign(float_intensity)
-        self.notes[i,j].assign(new_intensity)
+        self.output = self.output.assign_add(float_intensity_difference * tf.roll(self.padded_samples[j], shift=i*samples_per_beat, axis=0))
+        self.notes_float = self.notes_float[i,j].assign(float_intensity)
+        self.notes = self.notes[i,j].assign(new_intensity)
         
     def transform(self, matrix):
         for i in range(self.notes.shape[0]):

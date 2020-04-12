@@ -125,7 +125,7 @@ class ReluNormLayer(tf.Module):
                                               dtype=tf.float32,
                                               mean=0.0,
                                               stddev=self.scaling), name='w')
-        self.gamma = tf.Variable(tf.ones([self.output_feattures], dtype=tf.float32), name='gamma')
+        self.gamma = tf.Variable(tf.ones([self.output_features], dtype=tf.float32), name='gamma')
         self.beta = tf.Variable(tf.zeros([self.output_features], dtype=tf.float32), name='beta')
         print(f'RELU Layer. Input Features: {self.input_features} Output Features: {self.output_features}')
 
@@ -150,7 +150,7 @@ class ReluNormLayer(tf.Module):
                                        dtype=tf.float32,
                                        mean=0.0,
                                        stddev=self.scaling))
-        self.gamma.assign(tf.ones([self.output_feattures], dtype=tf.float32))
+        self.gamma.assign(tf.ones([self.output_features], dtype=tf.float32))
         self.beta.assign(tf.zeros([self.output_features], dtype=tf.float32))
     
     @tf.function
@@ -240,6 +240,56 @@ class SigmoidLayer(tf.Module):
     def __call__(self, x):
         y = tf.tensordot(x, self.w, axes=1) + self.b
         return tf.nn.sigmoid(y)
+    
+    
+class SigmoidNormLayer(tf.Module):
+    def __init__(self, input_features, output_features, scaling=None, name=None):
+        super(SigmoidNormLayer, self).__init__(name=name)
+        self.input_features = input_features
+        self.output_features = output_features
+        if scaling:
+            self.scaling = tf.constant(scaling, dtype=tf.float32)
+        else:
+            self.scaling = tf.constant(np.sqrt(2 / self.input_features), dtype=tf.float32)
+        self.w = tf.Variable(tf.random.normal([self.input_features, self.output_features],
+                                              dtype=tf.float32,
+                                              mean=0.0,
+                                              stddev=self.scaling), name='w')
+        self.gamma = tf.Variable(tf.ones([self.output_features], dtype=tf.float32), name='gamma')
+        self.beta = tf.Variable(tf.zeros([self.output_features], dtype=tf.float32), name='beta')
+        print(f'RELU Layer. Input Features: {self.input_features} Output Features: {self.output_features}')
+
+    def save(self, path):
+        np.save(os.path.join(path, 'w.npy'), self.w.numpy())
+        np.save(os.path.join(path, 'gamma.npy'), self.gamma.numpy())
+        np.save(os.path.join(path, 'beta.npy'), self.beta.numpy())
+        
+    def load(self, path):
+        w = np.load(os.path.join(path, 'w.npy'))
+        self.w.assign(w)
+        del w
+        gamma = np.load(os.path.join(path, 'gamma.npy'))
+        self.gamma.assign(gamma)
+        del gamma
+        beta = np.load(os.path.join(path, 'beta.npy'))
+        self.beta.assign(beta)
+        del beta
+    
+    def reset(self):
+        self.w.assign(tf.random.normal([self.input_features, self.output_features],
+                                       dtype=tf.float32,
+                                       mean=0.0,
+                                       stddev=self.scaling))
+        self.gamma.assign(tf.ones([self.output_features], dtype=tf.float32))
+        self.beta.assign(tf.zeros([self.output_features], dtype=tf.float32))
+    
+    @tf.function
+    def __call__(self, x):
+        y = tf.tensordot(x, self.w, axes=1)
+        z = tf.nn.batch_normalization(y, *tf.nn.moments(y, [0]), self.beta, self.gamma, 10**(-8))
+        return tf.nn.sigmoid(z)    
+    
+    
     
 class DisperseLayer(tf.Module):
     def __init__(self, input_features, chunk_size, shift_percentage, name=None):
