@@ -8,9 +8,7 @@ Random "compositions" were created by generating piano roll notation, then using
 
 ### Network Architecture
 
-Input audio is divided into overlapping 500ms segments, and the STFT with frame length 100ms of these segments is fed into a small network meant to detect instantaneous note attacks (essentially, which notes attacks are going on *right now*). The result of these are combined to form a final piano roll output.
-
-![Network Architecture](network_architecture.png)
+Input audio is divided into overlapping 23ms segments, and the Discrete Fourier Transforms of these segments are fed into an LSTM, which makes predictions for which notes are playing. 
 
 ### Why do Fourier Preprocessing?
 
@@ -28,17 +26,15 @@ Due to concerns with accurately detecting extended notes and different instrumen
 
 We hope in the future to expand the features we can extract / parse from an input audio file.
 
-In addition, we only tested with notes quantized to a fixed grid. Rhythmic irregularities may throw off note detection. In the future, we hope to integrate note onset detection pre-processing to allow better detection of notes not falling exactly on a quantized grid. 
-
 ### Training
 
-Training was completed over the course of a few days on Google Cloud Platform. This was done ad hoc, training parts of the neural network at a time, using single notes at first, then training with examples with more and more complexity once basic single-note detection was sufficiently accurate.
+Training was completed over the course of a few hours on a local machine. The loss is based on "cosine similarity", which experimentally performed better than mean squared error or note-wise binary cross-entropy. 
 
 
 ### Reuslts
 
-After training, the network was able to accurately reconstruct both note and intensity information on test data.
+After training, the network was able to accurately reconstruct the original piano roll notation, with only slight errors in note onset. 
 
 ![results](results.jpg)
 
-Caveat: this should be taken with a grain of salt, since test data was constructed using the same samples and with the same quantization as training data.
+Caveat: this should be taken with a grain of salt, since test data was constructed using the same samples as training data, so it is not clear how well this would generalize.
