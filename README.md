@@ -1,10 +1,14 @@
 # sound-shift
 
-Automated music transcription using custom TensorFlow 2 deep learning.
+Automated music transcription via LSTM in Tensorflow!
 
-### Generating Training Data
+### Prior Work
 
-Random "compositions" were created by generating piano roll notation, then using this piano roll notation to generate corresponding audio files using samples from [University of Iowa Electronic Music Studios Musical Instrument Sample Database](http://theremin.music.uiowa.edu/MIS-Pitches-2012)
+Check out my previous project [Instrument Classifier](https://github.com/jmsmdy/instrument-classifier) for some prior work.
+
+### Data Augmentation to Generate Training Data
+
+Random "compositions" were created by generating piano roll notation, then using this piano roll notation to generate corresponding audio files by compositing samples from [University of Iowa Electronic Music Studios Musical Instrument Sample Database](http://theremin.music.uiowa.edu/MIS-Pitches-2012)
 
 ### Network Architecture
 
@@ -35,6 +39,6 @@ Training was completed over the course of a few hours on a local machine. The lo
 
 After training, the network was able to accurately reconstruct the original piano roll notation, with only slight errors in note onset. 
 
-![results](results.jpg)
+![results](results.png)
 
 Caveat: this should be taken with a grain of salt, since test data was constructed using the same samples as training data, so it is not clear how well this would generalize.
